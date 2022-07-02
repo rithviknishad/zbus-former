@@ -21,7 +21,7 @@ export default function Footer(props) {
             part of the series
           </h2>
           <h1 className="md:text-center lg:text-right text-gray-600 dark:text-gray-200 text-sm md:text-base">
-            {"When software engineer ❤️ electrical engineer ⚡"}
+            {"When software engineer ❤️ meets electrical engineer ⚡"}
           </h1>
           <div className="flex flex-wrap md:justify-center lg:justify-end items-center gap-8 mt-6">
             <GitHub username="rithviknishad/zbus-former" />
