@@ -1,6 +1,8 @@
 import {
+  Bus,
   ReactanceBranch,
   ReactanceDiagram,
+  referenceBus,
   ZBus,
   ZBusFormationStep,
 } from "./types";
@@ -20,17 +22,58 @@ export const kronsReduce = (matrix: number[][]) => {
   return result;
 };
 
-// export const formZBus = (props: {
-//   zbusInitial: ZBus;
-//   branchToAdd: ReactanceBranch;
-//   newBus: boolean;
-// }) => {
-//   const k = zbusInitial.length;
-//   const n = k + 1;
-// };
+export const addBranchToExistingZBus = (
+  branch: ReactanceBranch,
+  initial: ZBus,
+  newBus: boolean
+) => {
+  const k = initial.length;
+  const n = k + 1;
 
-// export const computeZBus = (diagram: ReactanceDiagram) => {
-//   const steps: ZBusFormationStep[] = [];
+  const { reactance, startBus, endBus } = branch;
 
-//   return steps;
-// };
+  let zbus: ZBus = [...initial];
+
+  let step: ZBusFormationStep = { branch, substeps: [], description: "" };
+
+  if (startBus === referenceBus || endBus === referenceBus) {
+    const description = `Adding j${reactance} between ${startBus} and ${endBus}`;
+    step.description = description;
+
+    for (let i = 0; i < k; ++i) zbus[i].push(0); // Z(i, k)
+    zbus.push([]);
+    for (let j = 0; j < k; ++j) zbus[k].push(0); // Z(k, j)
+    zbus[k].push(reactance); // Zkk
+
+    step.substeps.push({ description, result: [...zbus] });
+  }
+
+  if (!newBus) {
+    const description = "Applying kron's reduction";
+    zbus = kronsReduce(zbus);
+    step.substeps.push({ description, result: [...zbus] });
+  }
+
+  return step;
+};
+
+export const computeZBus = (diagram: ReactanceDiagram) => {
+  const steps: ZBusFormationStep[] = [];
+
+  const bussesFound = new Set<Bus>();
+  let zbus: ZBus = [];
+
+  diagram.branches.forEach((branch) => {
+    const hasNewBus =
+      !bussesFound.has(branch.startBus) || !bussesFound.has(branch.endBus);
+
+    bussesFound.add(branch.startBus);
+    bussesFound.add(branch.endBus);
+
+    steps.push(addBranchToExistingZBus(branch, zbus, hasNewBus));
+
+    zbus = steps.slice(-1)[0].substeps.slice(-1)[0].result;
+  });
+
+  return steps;
+};
